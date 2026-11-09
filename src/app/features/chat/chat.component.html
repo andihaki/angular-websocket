@@ -1,0 +1,70 @@
+<div class="flex flex-col h-screen bg-gray-50">
+  <!-- Header -->
+  <header class="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200 shadow-sm">
+    <div class="flex items-center gap-3">
+      <h1 class="text-xl font-bold text-gray-800">WebSocket Chat</h1>
+      <span class="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-0.5 rounded">You: {{ senderName() }}</span>
+    </div>
+
+    <!-- Connection status badge -->
+    <div class="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border"
+      [class.bg-emerald-50]="wsService.connectionStatus() === 'connected'"
+      [class.text-emerald-700]="wsService.connectionStatus() === 'connected'"
+      [class.border-emerald-200]="wsService.connectionStatus() === 'connected'"
+      [class.bg-amber-50]="wsService.connectionStatus() === 'connecting'"
+      [class.text-amber-700]="wsService.connectionStatus() === 'connecting'"
+      [class.border-amber-200]="wsService.connectionStatus() === 'connecting'"
+      [class.bg-rose-50]="wsService.connectionStatus() === 'disconnected'"
+      [class.text-rose-700]="wsService.connectionStatus() === 'disconnected'"
+      [class.border-rose-200]="wsService.connectionStatus() === 'disconnected'">
+      <span class="w-2 h-2 rounded-full" [class.bg-emerald-500]="wsService.connectionStatus() === 'connected'"
+        [class.bg-amber-500]="wsService.connectionStatus() === 'connecting'"
+        [class.bg-rose-500]="wsService.connectionStatus() === 'disconnected'"></span>
+      @if (wsService.connectionStatus() === 'connected') {
+      <span>Connected</span>
+      } @else if (wsService.connectionStatus() === 'connecting') {
+      <span>Connecting...</span>
+      } @else {
+      <span>Disconnected</span>
+      }
+    </div>
+  </header>
+
+  <!-- Messages list -->
+  <main #messageList class="flex-1 overflow-y-auto p-4 space-y-3">
+    @for (msg of wsService.messages(); track msg.id) {
+    <div class="flex flex-col" [class.items-end]="msg.sender === senderName()"
+      [class.items-start]="msg.sender !== senderName()">
+      <div class="flex items-baseline gap-2 mb-1 text-xs text-gray-500">
+        <span class="font-semibold">{{ msg.sender === senderName() ? 'You' : msg.sender }}</span>
+        <span>{{ msg.timestamp | date:'HH:mm' }}</span>
+      </div>
+      <div class="max-w-md px-4 py-2 rounded-2xl wrap-break-word shadow-sm text-sm"
+        [class.bg-blue-600]="msg.sender === senderName()" [class.text-white]="msg.sender === senderName()"
+        [class.rounded-tr-none]="msg.sender === senderName()" [class.bg-white]="msg.sender !== senderName()"
+        [class.text-gray-800]="msg.sender !== senderName()" [class.border]="msg.sender !== senderName()"
+        [class.border-gray-200]="msg.sender !== senderName()" [class.rounded-tl-none]="msg.sender !== senderName()">
+        {{ msg.text }}
+      </div>
+    </div>
+    }
+    @if (wsService.messages().length === 0) {
+    <div class="h-full flex items-center justify-center text-gray-400 text-sm">
+      No messages yet. Say hello! 👋
+    </div>
+    }
+  </main>
+
+  <!-- Input bar -->
+  <footer class="border-t bg-white p-4">
+    <div class="flex gap-2 max-w-4xl mx-auto">
+      <input type="text" placeholder="Type a message..."
+        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+        [ngModel]="inputText()" (ngModelChange)="inputText.set($event)" (keydown.enter)="send()" />
+      <button type="button" (click)="send()"
+        class="px-5 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium rounded-lg text-sm transition-colors cursor-pointer">
+        Send
+      </button>
+    </div>
+  </footer>
+</div>

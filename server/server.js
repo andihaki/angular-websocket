@@ -1,40 +1,31 @@
-import express from 'express';
 import { createServer } from 'node:http';
-import { Server } from 'socket.io';
-import cors from 'cors';
 import crypto from 'node:crypto';
+import StompServer from 'stomp-broker-js';
 
-const app = express();
-// @todo: move all hardcoded http://localhost into .env
-app.use(cors({ origin: 'http://localhost:4200' }));
+const httpServer = createServer();
+const stompServer = new StompServer({ server: httpServer });
 
-const httpServer = createServer(app);
-const io = new Server(httpServer, {
-  cors: {
-    origin: 'http://localhost:4200',
-    methods: ['GET', 'POST'],
-  },
+stompServer.on('connecting', (sessionId) => {
+  console.log(`[STOMP] Client connecting: ${sessionId}`);
 });
 
-io.on('connection', (socket) => {
-  console.log(`[Socket.io] User connected: ${socket.id}`);
+stompServer.on('disconnected', (sessionId) => {
+  console.log(`[STOMP] Client disconnected: ${sessionId}`);
+});
 
-  socket.on('message', (payload) => {
-    const enrichedMessage = {
-      id: crypto.randomUUID(),
-      text: payload?.text ?? '',
-      sender: payload?.sender ?? '',
-      timestamp: new Date().toISOString(),
-    };
-    io.emit('message', enrichedMessage);
-  });
-
-  socket.on('disconnect', () => {
-    console.log(`[Socket.io] User disconnected: ${socket.id}`);
-  });
+// Clients SEND chat payloads to /app/chat; the broker relays them here.
+stompServer.subscribe('/app/chat', (msg, headers) => {
+  const payload = typeof msg === 'string' ? JSON.parse(msg) : msg;
+  const enrichedMessage = {
+    id: crypto.randomUUID(),
+    text: payload?.text ?? '',
+    sender: payload?.sender ?? '',
+    timestamp: new Date().toISOString(),
+  };
+  stompServer.send('/topic/chat', { 'content-type': 'application/json' }, JSON.stringify(enrichedMessage));
 });
 
 const PORT = 3000;
 httpServer.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`STOMP broker running on ws://localhost:${PORT}/stomp`);
 });

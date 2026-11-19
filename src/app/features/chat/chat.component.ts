@@ -10,13 +10,14 @@ import {
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 import { WebsocketService } from '../../websocket.service';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, RouterLink],
   templateUrl: './chat.component.html',
   styleUrl: './chat.component.css',
 })
